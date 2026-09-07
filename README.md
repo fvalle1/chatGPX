@@ -9,6 +9,8 @@ access to that data via an MCP server — including tools that compute real
 distance, elevation and pace figures from the GPS track itself, not just
 whatever a description string happens to say.
 
+![page.png](page.png)
+
 ## How it fits together
 
 - `server.py` — an MCP server exposing tools over your downloaded GPX
