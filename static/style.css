@@ -1,0 +1,197 @@
+:root {
+  --bg: #0f1512;
+  --surface: #171f1a;
+  --border: #2a352e;
+  --text: #e7ece9;
+  --text-dim: #9aa89f;
+  --accent: #7ebd00;
+  --accent-dim: #5c8c00;
+  --error: #ff6b6b;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.brand strong {
+  color: var(--accent);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.view {
+  width: 100%;
+  max-width: 640px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.card h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.3rem;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.6rem 0.7rem;
+  font-size: 0.95rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+#login-submit,
+.chat-form button {
+  margin-top: 1rem;
+  padding: 0.65rem 1rem;
+  background: var(--accent);
+  color: #0f1512;
+}
+
+#login-submit:disabled {
+  background: var(--accent-dim);
+  cursor: wait;
+}
+
+.link-btn {
+  background: none;
+  color: var(--text-dim);
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+.error {
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+.status {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+#chat-view {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--surface);
+}
+
+.msg {
+  max-width: 80%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #0f1512;
+}
+
+.msg.assistant {
+  align-self: flex-start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.msg.pending {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.chat-form input {
+  flex: 1;
+}
+
+.chat-form button {
+  padding: 0 1.2rem;
+}

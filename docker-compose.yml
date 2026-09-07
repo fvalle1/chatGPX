@@ -1,0 +1,13 @@
+services:
+  chatgpx:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Persist downloaded GPX activities (and the vendored komootgpx library
+      # code it lives alongside) across rebuilds/restarts.
+      - ./komootgpx:/app/komootgpx
+      - ./generated_videos:/app/generated_videos
+    restart: unless-stopped
