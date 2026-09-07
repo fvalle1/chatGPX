@@ -9,9 +9,6 @@ graft
 .env
 generated_videos
 
-# Personal Komoot data and cached credentials - never bake these into an
-# image. The vendored library code (api.py, komootgpx.py, gpxcompiler.py,
-# utils.py, __init__.py) lives directly under komootgpx/ and IS still copied.
-komootgpx/komoot
-komootgpx/komoot_run
-komootgpx/credentials.json
+# Personal Komoot data - never bake this into an image. The komootgpx
+# library itself is a git submodule (KomootGPX/) and IS still copied.
+activities/

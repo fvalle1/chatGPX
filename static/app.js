@@ -56,12 +56,16 @@ loginForm.addEventListener("submit", async (event) => {
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+  const tour_type = document.getElementById("tour-type").value;
+  const sport = document.getElementById("sport").value.trim() || null;
+  const start_date = document.getElementById("start-date").value || null;
+  const end_date = document.getElementById("end-date").value || null;
 
   try {
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, tour_type, sport, start_date, end_date }),
     });
     const data = await res.json();
     if (!res.ok) {

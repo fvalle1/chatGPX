@@ -14,9 +14,9 @@ ENV UV_COMPILE_BYTECODE=1 \
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
-# Now bring in the rest of the app, including the vendored ./komootgpx library
-# (see README: it's gitignored, not tracked by git, but present in this build
-# context and required for gpx_sync.py to import komootgpx.api).
+# Now bring in the rest of the app, including the KomootGPX/ git submodule
+# (a plain `docker build` picks up whatever's already checked out on disk;
+# run `git submodule update --init` before building if KomootGPX/ is empty).
 COPY . .
 RUN uv sync --frozen --no-dev
 

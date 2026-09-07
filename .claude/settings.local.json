@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run *)",
+      "Bash(uv sync *)",
+      "Bash(uv pip *)",
+      "WebFetch(domain:huggingface.co)",
+      "Bash(env)",
+      "Bash(uv add *)",
+      "Bash(clawteam --version)",
+      "Bash(git -C /Users/filippovalle/Developer/chatgpx remote -v)",
+      "Bash(git -C /Users/filippovalle/Developer/chatgpx/komootgpx remote -v)",
+      "Bash(git -C /Users/filippovalle/Developer/chatgpx status)",
+      "Bash(export CLAWTEAM_AGENT_ID=\"leader-001\")",
+      "Bash(export CLAWTEAM_AGENT_NAME=\"leader\")",
+      "Bash(export CLAWTEAM_AGENT_TYPE=\"leader\")",
+      "Bash(clawteam team *)",
+      "Bash(clawteam task *)",
+      "Bash(clawteam spawn *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "graft"
+  ]
+}

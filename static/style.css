@@ -85,18 +85,48 @@ label {
 
 input[type="email"],
 input[type="password"],
-input[type="text"] {
+input[type="text"],
+input[type="date"],
+select {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   padding: 0.6rem 0.7rem;
   font-size: 0.95rem;
+  width: 100%;
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.sync-options {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+}
+
+.sync-options summary {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.sync-options label {
+  display: block;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.field-row > div {
+  flex: 1;
 }
 
 button {

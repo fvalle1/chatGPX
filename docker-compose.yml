@@ -6,8 +6,9 @@ services:
     env_file:
       - .env
     volumes:
-      # Persist downloaded GPX activities (and the vendored komootgpx library
-      # code it lives alongside) across rebuilds/restarts.
-      - ./komootgpx:/app/komootgpx
+      # Persist downloaded GPX activities across rebuilds/restarts.
+      - ./activities:/app/activities
+      # The komootgpx library itself is a git submodule (KomootGPX/), not a
+      # bind mount - it's baked into the image by `COPY . .` in the Dockerfile.
       - ./generated_videos:/app/generated_videos
     restart: unless-stopped

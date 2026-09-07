@@ -1,0 +1,3 @@
+[submodule "KomootGPX"]
+	path = KomootGPX
+	url = git@github.com:timschneeb/KomootGPX.git

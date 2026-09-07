@@ -1,15 +1,20 @@
 # chatgpx
 
-Chat about your own Komoot activities. You log in with your Komoot email and
-password, the app pulls your tours as GPX files, and you can then chat with
-an LLM (over OpenRouter) that has tool access to that GPX data via an MCP
-server.
+Chat with your own Komoot hiking/running/cycling activities, and get real
+statistics computed from the raw GPS data — not just descriptions.
+
+You log in with your Komoot email and password, the app pulls your tours as
+GPX files, and you can then chat with an LLM (over OpenRouter) that has tool
+access to that data via an MCP server — including tools that compute real
+distance, elevation and pace figures from the GPS track itself, not just
+whatever a description string happens to say.
 
 ## How it fits together
 
 - `server.py` — an MCP server exposing tools over your downloaded GPX
-  activities (`list_activities`, `read_activity`, `summarize`,
-  `generate_activity_video`) plus a `docs://traces` resource.
+  activities (`list_activities`, `read_activity`, `get_activity_stats`,
+  `get_stats_summary`, `summarize`, `generate_activity_video`) plus a
+  `docs://traces` resource.
 - `gpx_sync.py` — logs in to Komoot and downloads all tours as GPX files
   (`download_all_gpx(email, password, output_dir=...) -> list[Path]`),
   compatible with what `server.py` reads.
@@ -27,27 +32,51 @@ only held in memory for the duration of the login request and is never
 logged or persisted by this app (see `gpx_sync.py`'s docstring for one
 caveat inherited from the vendored `komootgpx` library itself).
 
-## Prerequisite: the vendored `komootgpx` library
+## MCP tools
 
-`gpx_sync.py` imports `komootgpx.api.KomootApi` from a vendored copy of
-[fvalle1/komootgpx](https://github.com/fvalle1/komootgpx) at `./komootgpx/`.
-That directory is gitignored (it also doubles as the GPX output directory,
-so it fills up with your personal activity data) and is **not** included in
-a fresh `git clone` of this repo. If `./komootgpx/` doesn't already contain
-`api.py`, `gpxcompiler.py`, `utils.py`, etc., install the same library first:
+| Tool | What it does |
+|---|---|
+| `list_activities` | Name, description, file for every activity (de-duplicated by Komoot tour ID — the same tour can otherwise be exported into more than one folder and double-counted) |
+| `read_activity` | Raw GPX contents of one activity |
+| `get_activity_stats` | Distance, elevation gain/loss, elapsed time and pace for one activity — computed from its GPS track points, alongside Komoot's own reported numbers as a cross-check |
+| `get_stats_summary` | Totals and a per-month breakdown (distance, elevation gain, activity count) across your whole history |
+| `summarize` | Free-text summarization via the connected LLM |
+| `generate_activity_video` | Optional: a short flyover clip via a self-hosted Cosmos3-Nano server |
+
+`get_activity_stats` and `get_stats_summary` never trust Komoot's
+description text for the numbers — they parse every trackpoint and compute
+distance (haversine), elevation gain/loss, and elapsed time directly, so the
+figures hold up even if a file's metadata is missing or stale. Where Komoot
+does report its own numbers, they're returned side by side for comparison
+(in practice they mostly agree closely; elevation loss tends to diverge a
+bit more, most likely due to GPS altitude noise vs. Komoot's own smoothing).
+
+## Prerequisite: the `KomootGPX` submodule
+
+`gpx_sync.py` imports `komootgpx.api.KomootApi` from the
+[KomootGPX](https://github.com/timschneeb/KomootGPX) library, vendored as a
+git submodule at `./KomootGPX/`. A plain `git clone` of this repo leaves
+that directory empty - fetch it with:
 
 ```bash
-uv run pip install --target komootgpx komootgpx==1.6.2
+git submodule update --init
 ```
 
-(or clone/copy github.com/fvalle1/komootgpx into `./komootgpx/` yourself).
-Once that's done, `docker compose up --build` picks it up too, since Docker
-only respects `.dockerignore`, not `.gitignore`.
+Downloaded activity GPX files go in `./activities/` instead - a separate,
+gitignored, plain data directory. It's named nothing like "komootgpx" on
+purpose: this repo lives on a case-insensitive filesystem (default macOS),
+where "activities" can't accidentally collide with "KomootGPX" the way two
+names differing only in case would. `docker compose up --build` picks up
+the submodule too, since Docker only respects `.dockerignore`, not
+`.gitignore`, and the checked-out submodule files are on disk either way.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in at least `OPENROUTER_API_KEY`
-(see that file for what each variable does and which are optional).
+Copy `.env.example` to `.env` and fill in `OPENAI_API_KEY` / `OPENAI_BASE_URL`
+/ `OPENAI_MODEL` - one OpenAI-compatible provider and key shared by both
+`client.py` and the web app's chat (Mistral, OpenRouter, OpenAI itself,
+anything else that speaks the same API and supports tool calling). See
+`.env.example` for the rest, all optional.
 
 ## Run with Docker (recommended)
 
@@ -69,6 +98,35 @@ uv run uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 Open http://localhost:8000.
+
+Or skip the web app entirely and talk to `server.py` from any MCP client —
+`client.py` is a small standalone example (`uv run client.py`).
+
+The login form has a collapsible "Sync options" section wrapping a few of
+[KomootGPX](https://github.com/timschneeb/KomootGPX)'s many CLI flags: tour
+type (all/planned/recorded), a sport filter (matched exactly against
+Komoot's own sport id, e.g. `hike`, `running`), and a date range. All are
+optional and applied client-side against the fetched tour list, the same
+way komootgpx's own CLI does it - useful for re-syncing just a recent
+window instead of your whole history every time.
+
+## Using the MCP server from other tools
+
+By default `server.py` runs over stdio and is only reachable by being
+spawned as a subprocess (that's what `client.py` and `chat_backend.py` do).
+To expose it to an external MCP client/tool over the network instead, run
+it with the `streamable-http` transport:
+
+```bash
+uv run server.py --transport streamable-http --host 127.0.0.1 --port 8765
+```
+
+Any MCP client that speaks the streamable-http transport can then connect
+to `http://127.0.0.1:8765/mcp` and use `list_activities`,
+`get_activity_stats`, `get_stats_summary`, etc. directly - no need to spawn
+this repo as a subprocess. `--host 0.0.0.0` makes it reachable from outside
+localhost (e.g. from inside a Docker network or another machine); there's
+no authentication in front of it, so only do that on a network you trust.
 
 ## Development notes
 

@@ -2,10 +2,13 @@
 
 Connects to the MCP server in server.py over stdio (same
 stdio_client + ClientSession pattern as client.py), exposes its tools
-(list_activities, read_activity, generate_activity_video, summarize) to an
+(list_activities, read_activity, get_activity_stats,
+get_stats_summary, generate_activity_video, summarize) to an
 LLM as OpenAI-style function/tool calls, and runs the actual conversation
-through OpenRouter's OpenAI-compatible API (https://openrouter.ai/api/v1)
-against a free-tier model (id ending in ":free" -> price zero).
+through whatever OpenAI-compatible endpoint OPENAI_BASE_URL points to -
+same OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL env vars as client.py,
+so one provider (Mistral, OpenRouter, OpenAI, ...) and one key cover both.
+The model just needs to support OpenAI-style tool/function calling.
 
 Library usage:
     from chat_backend import chat
@@ -30,17 +33,12 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-
-# Free-tier default (id ends in ":free" -> zero price on OpenRouter).
-# Override with OPENROUTER_MODEL; check https://openrouter.ai/models?max_price=0
-# for the current free lineup since it changes over time.
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "minimax/minimax-m3:free")
-
-openai_client = AsyncOpenAI(
-    api_key=os.environ.get("OPENROUTER_API_KEY"),
-    base_url=OPENROUTER_BASE_URL,
-)
+# Same client construction as client.py: AsyncOpenAI() reads OPENAI_API_KEY /
+# OPENAI_BASE_URL from the environment itself, so this works with Mistral,
+# OpenRouter, OpenAI, or any other OpenAI-compatible endpoint - whatever
+# .env already points client.py at.
+openai_client = AsyncOpenAI()
+CHAT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 server_params = StdioServerParameters(
     command="uv",
@@ -50,7 +48,11 @@ server_params = StdioServerParameters(
 SYSTEM_PROMPT = (
     "You are a helpful assistant with access to tools for reading and "
     "summarizing a user's Komoot GPX activity data. Use the tools to ground "
-    "your answers in the actual data instead of guessing."
+    "your answers in the actual data instead of guessing. For any question "
+    "involving numbers - distance, elevation, pace, totals, or trends over "
+    "time - call get_activity_stats or get_stats_summary rather than "
+    "estimating from descriptions; both compute figures directly from GPS "
+    "track points."
 )
 
 MAX_TOOL_ROUNDS = 8
@@ -98,7 +100,7 @@ class MCPChatSession:
     async def _call_tool(self, name: str, arguments: dict) -> str:
         result = await self.session.call_tool(name=name, arguments=arguments)
         text = "\n".join(block.text for block in result.content if block.type == "text")
-        if result.isError:
+        if result.is_error:
             return f"Error calling tool {name}: {text}"
         return text
 
@@ -113,7 +115,7 @@ class MCPChatSession:
 
         for _ in range(MAX_TOOL_ROUNDS):
             response = await openai_client.chat.completions.create(
-                model=OPENROUTER_MODEL,
+                model=CHAT_MODEL,
                 messages=messages,
                 tools=self._tools or None,
             )

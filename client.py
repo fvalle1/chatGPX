@@ -2,10 +2,12 @@ import asyncio
 import json
 import os
 
+import httpx
 from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.session import ClientRequestContext
+from mcp.shared.exceptions import MCPError
 from mcp.types import (
     CreateMessageRequestParams,
     CreateMessageResult,
@@ -94,6 +96,20 @@ async def run():
                 arguments={"text_to_summarize": descriptions},
             )
             print(result.content)
+
+            first_file = json.loads(
+                next(b.text for b in activities.content if b.type == "text")
+            )["file"]
+            try:
+                video_result = await session.call_tool(
+                    name="generate_activity_video",
+                    arguments={"filename": first_file},
+                )
+                for block in video_result.content:
+                    if block.type == "text":
+                        print(block.text)
+            except (MCPError, httpx.ConnectError) as e:
+                print(f"generate_activity_video failed: {e}")
 
 
 if __name__ == "__main__":

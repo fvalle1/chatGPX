@@ -33,7 +33,7 @@ logger = logging.getLogger("chatgpx.app")
 
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
-GPX_DIR = BASE_DIR / "komootgpx"
+GPX_DIR = BASE_DIR / "activities"
 SESSION_COOKIE = "chatgpx_session"
 
 try:
@@ -76,6 +76,10 @@ async def _stop_chat_backend():
 class LoginRequest(BaseModel):
     email: str
     password: str
+    tour_type: str = "tour_all"
+    start_date: str | None = None
+    end_date: str | None = None
+    sport: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -101,8 +105,20 @@ async def login(payload: LoginRequest, response: Response):
 
     try:
         files = await run_in_threadpool(
-            gpx_sync.download_all_gpx, payload.email, payload.password, GPX_DIR
+            gpx_sync.download_all_gpx,
+            payload.email,
+            payload.password,
+            GPX_DIR,
+            payload.tour_type,
+            "en",
+            payload.start_date,
+            payload.end_date,
+            payload.sport,
         )
+    except ValueError as exc:
+        # Bad date format, etc. - a 400, not a 401 (nothing wrong with the
+        # credentials).
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         # gpx_sync is responsible for not leaking credentials in its own
         # exception messages/logs; we just avoid ever logging the payload here.
